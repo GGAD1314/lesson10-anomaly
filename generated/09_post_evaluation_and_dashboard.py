@@ -35,14 +35,14 @@ evaluation = pd.DataFrame(rows)
 evaluation.to_csv(ROOT / "generated" / "post_model_evaluation.csv", index=False, encoding="utf-8-sig", float_format="%.8f")
 base = evaluation.loc[evaluation.q == 98.5].iloc[0]
 lines = [
-    "# 模型完成后的独立揭盲评估", "",
+    "# 模型冻结后的标签核验", "",
     "姓名：龙羲玥｜学号：20251030226｜专业：金融计算机专业", "",
-    "> 隔离说明：01—08 建模与分析脚本均不读取 is_fraud。本脚本仅在 LOF 分数、阈值和自主研究冻结后合并标签，用于课程要求的检中数/漏报数展示；标签未参与特征、选参或阈值选择。", "",
-    f"- 暗桩共 {fraud_total} 笔（{fraud_total/len(df):.2%}）。",
-    f"- 98.5 分位：{int(base.n)} 笔预警，检中 {int(base.hit)}，漏报 {int(base.miss)}，误报 {int(base.fp)}；精确率 {base.precision:.2%}，召回率 {base.recall:.2%}。",
-    "- 唯一误报为 T0133（16 点/柜台/超市/2926.63 元），与建模阶段仅凭行为识别出的‘不同笔’一致。",
-    "- 这些指标只描述本教学虚构数据，不能外推真实业务表现；看板滑杆也不会重跑模型。", "",
-    "## 全阈值结果", "",
+    "01—08 脚本都没有读取 is_fraud。等 LOF 分数、阈值和研究结果确定后，我才在这里按 txn_id 合并标签，计算课程要求的检中数和漏报数。标签没有参与特征选择、参数调整或阈值选择。", "",
+    f"- 数据中标注的欺诈交易共 {fraud_total} 笔，占 {fraud_total/len(df):.2%}。",
+    f"- 98.5 分位阈值下有 {int(base.n)} 笔预警，检中 {int(base.hit)} 笔，漏报 {int(base.miss)} 笔，误报 {int(base.fp)} 笔；精确率为 {base.precision:.2%}，召回率为 {base.recall:.2%}。",
+    "- 唯一的误报是 T0133（16 点、柜台、超市、2926.63 元）。建模时仅凭交易行为就把它单独标出，揭盲后确认它是正常交易。",
+    "- 这些指标只适用于本教学虚构数据，不能据此推断真实业务效果。看板滑杆只改变预警阈值，不会重新训练模型。", "",
+    "## 各分位点的核验结果", "",
     evaluation[["q", "thr", "n", "hit", "miss", "fp", "precision", "recall"]].round({"thr": 4, "precision": 4, "recall": 4}).to_markdown(index=False),
 ]
 (ROOT / "generated" / "post_model_evaluation.md").write_text("\n".join(lines) + "\n", encoding="utf-8")

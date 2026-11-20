@@ -31,15 +31,18 @@ df[score_cols].to_csv(ROOT / "generated" / "lof_scores.csv", index=False, encodi
 
 print("=== 可疑名单（前 15，LOF 分数降序）===")
 print(top15[cols].round({"lof_score": 2}).to_string(index=False))
+hours = "、".join(str(int(h)) for h in sorted(top15.txn_hour.unique()))
+channels = "、".join(f"{name} {count} 笔" for name, count in top15.channel.value_counts().items())
+merchants = "、".join(f"{name} {count} 笔" for name, count in top15.merchant_type.value_counts().items())
 lines = [
-    "# Step1 名单快照", "",
+    "# Step1 可疑名单结果", "",
     "姓名：龙羲玥｜学号：20251030226｜专业：金融计算机专业", "",
-    f"- 前 15 名单 LOF 分数：{top15.lof_score.max():.2f} → {top15.lof_score.min():.2f}（第 1 → 第 15）。",
-    f"- 时段：{sorted(top15.txn_hour.unique())} 点，全部位于凌晨 1—4 点。",
-    f"- 金额：{top15.amount.min():,.2f}—{top15.amount.max():,.2f} 元，中位数 {top15.amount.median():,.2f} 元；全体中位数 {df.amount.median():,.2f} 元。",
-    f"- 渠道：{top15.channel.value_counts().to_dict()}；商户类型：{top15.merchant_type.value_counts().to_dict()}。",
-    "- 证据：在小时—金额图上，它们形成与白天主体分离的孤岛；标准化空间中的局部密度显著低于各自邻居，所以 LOF 远大于 1。",
-    "- 口径：仅使用 amount / txn_hour / daily_cnt，先 StandardScaler，再 LOF(k=20)；未读取 is_fraud。",
+    f"- 按 LOF 分数从高到低取前 15 笔，第 1 名为 {top15.lof_score.max():.2f}，第 15 名为 {top15.lof_score.min():.2f}。",
+    f"- 这些交易都发生在凌晨 {hours} 点。",
+    f"- 金额范围为 {top15.amount.min():,.2f}—{top15.amount.max():,.2f} 元，中位数为 {top15.amount.median():,.2f} 元；全部交易的中位数只有 {df.amount.median():,.2f} 元。",
+    f"- 渠道分布：{channels}；商户类型：{merchants}。",
+    "- 在小时—金额散点图上，这 15 笔交易与白天交易分开。它们的局部密度也明显低于各自近邻，因此 LOF 分数较高。",
+    "- 计算时只使用 amount、txn_hour、daily_cnt，先做 StandardScaler，再计算 LOF(k=20)，没有读取 is_fraud。",
 ]
 (ROOT / "generated" / "step1_summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 

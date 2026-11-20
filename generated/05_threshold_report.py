@@ -72,24 +72,24 @@ plt.close(fig)
 
 odd_desc = "、".join(f"{r.txn_id}（{r.txn_hour} 点/{r.channel}/{r.merchant_type}/{r.amount:,.2f} 元）" for _, r in odd.iterrows()) or "无"
 lines = [
-    "# 致风控经理：本期异常交易旗舰名单", "",
+    "# 98.5 分位预警名单与处理建议", "",
     "姓名：龙羲玥｜学号：20251030226｜专业：金融计算机专业", "",
-    "## ① 我们抓了什么",
-    f"共 {len(flag)} 笔，涉案金额 {flag.amount.sum():,.2f} 元；{len(flag)-len(odd)} 笔集中在凌晨 1—4 点、1.66 万—4.37 万元。",
-    "主体为网银/APP 大额交易，与白天主体形成孤岛，先列入复核队列而非直接定罪。", "",
-    "## ② 我们可能抓错了什么",
-    f"不同笔为 {odd_desc}；它是白天柜台消费，只因局部密度较高分被拖入，属于淹没嫌疑。",
-    "一刀切会造成正常客户支付失败、投诉和人工复核成本；阈值划线不等于欺诈判决。", "",
-    "## ③ 建议动作",
-    f"凌晨大额 {len(flag)-len(odd)} 笔先临时限额并人工回访，确认后放行或升级调查；T0133 仅观察、不拦截。",
-    "最得罪客户的是‘全拦’；最放过 fraudster 的是‘只看不处置’，所以用分层动作平衡体验与资损。", "",
-    "## 阈值验证问答",
-    f"- 99.5 分位：{int(sweep.loc[sweep["quantile"] == 99.5, 'count'].iloc[0])} 笔，比 98.5 少 {len(flag)-int(sweep.loc[sweep["quantile"] == 99.5, 'count'].iloc[0])} 笔；移除 {len(removed)} 笔，交易号见下。",
+    "## 我们抓了什么",
+    f"名单共 {len(flag)} 笔，金额合计 {flag.amount.sum():,.2f} 元。其中 {len(flag)-len(odd)} 笔发生在凌晨 1—4 点，金额为 1.66 万—4.37 万元。",
+    "这些交易主要通过网银或 APP 完成，和白天交易在小时—金额图上明显分开。建议先进入人工复核队列，不直接认定为欺诈。", "",
+    "## 我们可能抓错了什么",
+    f"名单里的 {odd_desc} 与其余交易不同。它是白天柜台消费，可能只是因为附近交易较少而得到较高分。",
+    "如果不加区分地全部拦截，正常客户可能支付失败并投诉，也会增加人工复核量。超过阈值只表示需要检查，不等于已经确认欺诈。", "",
+    "## 建议怎么处理",
+    f"对凌晨大额的 {len(flag)-len(odd)} 笔先临时限额并电话回访，核实后放行或继续调查；T0133 先观察，不直接拦截。",
+    "全部拦截最容易影响正常客户；只列入名单却不复核，最容易漏掉真正的欺诈交易。分开处理可以在客户体验和资金损失之间作权衡。", "",
+    "## 阈值变化后的名单",
+    f"- 调到 99.5 分位后有 {int(sweep.loc[sweep["quantile"] == 99.5, 'count'].iloc[0])} 笔，比 98.5 分位少 {len(flag)-int(sweep.loc[sweep["quantile"] == 99.5, 'count'].iloc[0])} 笔。移出的交易为：",
     "  " + "、".join(sorted(removed)) + "。",
-    f"- 97 分位：{int(sweep.loc[sweep["quantile"] == 97, 'count'].iloc[0])} 笔，比 98.5 多 {int(sweep.loc[sweep["quantile"] == 97, 'count'].iloc[0])-len(flag)} 笔；新增交易号见下。",
+    f"- 调到 97 分位后有 {int(sweep.loc[sweep["quantile"] == 97, 'count'].iloc[0])} 笔，比 98.5 分位多 {int(sweep.loc[sweep["quantile"] == 97, 'count'].iloc[0])-len(flag)} 笔。新增的交易为：",
     "  " + "、".join(sorted(added)) + "。", "",
     "---",
-    "方法与局限：LOF（k=20，标准化三特征：金额/小时/当日笔数），98.5 分位阈值；未读取 is_fraud。教学虚构数据，不能推断真实欺诈率。",
+    "方法：金额、小时、当日笔数标准化后计算 LOF(k=20)，取 98.5 分位为阈值。建模时没有读取 is_fraud。数据为教学虚构数据，结果不能用于估计真实欺诈率。",
 ]
 (ROOT / "generated" / "risk_report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 print("已保存 flagship_list.csv、threshold_sweep.csv、risk_report.md 和 05_threshold_balance.png")

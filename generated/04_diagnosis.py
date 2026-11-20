@@ -63,23 +63,23 @@ quote = ("The number k of neighbors considered, (alias parameter n_neighbors) is
          "the minimum number of objects a cluster has to contain, so that other objects can be local outliers relative "
          "to this cluster, and 2) smaller than the maximum number of close by objects that can potentially be local outliers.")
 lines = [
-    "# 诊断：k=5 时凌晨大额点为什么 LOF≈1", "",
-    "## 症状对比",
-    f"- k=20 第一名 {scores20.max():.2f}，k=5 第一名 {scores5.max():.2f}；不是程序报错，而是参数假设失效。", "",
-    "## 近邻构成取证",
-    f"- 对 k=20 前 5 点，5 近邻中凌晨孤岛成员占比 {same5:.1%}；20 近邻中孤岛外主体占比 {main20:.1%}。",
-    f"- 补充核对全部 15 点的 20 近邻：凌晨孤岛成员占 {tracked_night_share:.1%}，孤岛外主体占 {1-tracked_night_share:.1%}；因此 62.7% 是孤岛成员占比，不是主体占比。",
-    "- 完整前 5 点逐点邻居名单见 neighbor_evidence.csv；连线图只展示空间关系，不使用任何标签。", "",
-    "## k 扫描（固定追踪同一批点）",
-    "- " + "；".join(f"k={k}→{v:.2f}" for k, v in zip(ks, avg)) + "。",
-    "- 纵轴始终是 k=20 前 15 交易在各 k 下的平均分，不是每个版本各自 top15 的平均分。", "",
-    "## scikit-learn 官方依据",
+    "# k=5 时凌晨大额交易的 LOF 为什么接近 1", "",
+    "## 实验现象",
+    f"k=20 时最高分为 {scores20.max():.2f}，改成 k=5 后最高分只有 {scores5.max():.2f}，而且高分名单也变了。问题出在近邻数量，不是程序没有跑通。", "",
+    "## 查看近邻构成",
+    f"- 先取 k=20 名单的前 5 笔。它们的 5 个近邻全部是凌晨交易，占 {same5:.1%}；把近邻数增加到 20 后，白天交易占 {main20:.1%}。",
+    f"- 再核对前 15 笔的全部 20 近邻，凌晨交易占 {tracked_night_share:.1%}，白天交易占 {1-tracked_night_share:.1%}。所以这里的 62.7% 指凌晨交易，不是白天交易。",
+    "- 前 5 笔交易的逐个近邻已保存到 neighbor_evidence.csv。图中连线只表示特征空间里的近邻关系，没有使用标签。", "",
+    "## 固定同一批交易扫描 k",
+    "- " + "；".join(f"k={k} 时为 {v:.2f}" for k, v in zip(ks, avg)) + "。",
+    "- 每个数都是 k=20 前 15 笔交易在相应 k 下的平均 LOF。扫描过程中没有更换观察对象，因此不能把它理解成各版本前 15 名的平均分。", "",
+    "## scikit-learn 文档中的说明",
     f"> {quote}",
     "> In practice, such information is generally not available, and taking n_neighbors=20 appears to work well in general.", "",
     "来源：https://scikit-learn.org/stable/modules/outlier_detection#local-outlier-factor （访问：2026-11-20）。", "",
-    "## 说人话结论",
-    "k=5 时，凌晨大额点环顾四周全是同伙：‘我的密度 ÷ 我邻居的密度 ≈ 1’，于是抱团异常被当成正常。",
-    "k=20 时，近邻被迫延伸到正常主体，密度对比恢复；这就是掩蔽效应（masking），不是把代码改回 20 就算理解。",
+    "## 原因",
+    "只看 5 个近邻时，这些凌晨大额交易的邻居仍来自同一小组，彼此密度接近。“我的密度 ÷ 我邻居的密度”因而接近 1，算法不会把它们单独挑出来。",
+    "k 增加到 20 后，近邻中开始出现白天普通交易，局部密度差异才显现出来。这就是本例的掩蔽效应（masking）。",
 ]
 (ROOT / "generated" / "diagnosis.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 

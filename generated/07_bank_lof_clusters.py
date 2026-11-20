@@ -35,21 +35,21 @@ outliers.to_csv(ROOT / "generated" / "bank_lof_outliers.csv", index=False, encod
 profile = df.groupby("cluster").agg(customer_count=("customer_id", "size"), outlier_count=("is_lof_outlier", "sum"), mean_lof=("lof_score", "mean"), mean_balance=("balance", "mean"), mean_monthly_spend=("avg_monthly_spend", "mean"), mean_overdue=("overdue_count", "mean")).reset_index()
 profile["outlier_share"] = profile.outlier_count / len(outliers)
 profile.to_csv(ROOT / "generated" / "bank_cluster_profile.csv", index=False, encoding="utf-8-sig", float_format="%.6f")
-cluster_text = "；".join(f"簇 {int(r.cluster)}：{int(r.outlier_count)} 人（占离群者 {r.outlier_share:.1%}，簇内 {int(r.outlier_count)}/{int(r.customer_count)}）" for _, r in profile.iterrows())
+cluster_text = "\n".join(f"- 簇 {int(r.cluster)}：{int(r.outlier_count)} 人，占全部离群客户的 {r.outlier_share:.1%}；该簇共有 {int(r.customer_count)} 人，簇内离群数为 {int(r.outlier_count)}/{int(r.customer_count)}。" for _, r in profile.iterrows())
 lines = [
     "# 自主实践 2：bank_customers 的 LOF 离群客户落在哪些聚类簇", "",
     "姓名：龙羲玥｜学号：20251030226｜专业：金融计算机专业", "",
-    "## 复用口径与必要假设",
-    "复用第 9 课的‘中位数填补 → StandardScaler → KMeans’思路；题面未给簇数，本报告明确设 KMeans(n_clusters=5, random_state=42, n_init=10)。",
-    "聚类与 LOF 使用同一套 7 个数值特征；LOF(n_neighbors=20, contamination=0.05)，即训练分数阈值约 5%，得到 10 名离群客户。",
-    "customer_id 仅作标识；gender/city 不纳入本次数值画像；is_default/risk_level 是监督标签，未读取、未用于选参或建模。", "",
-    "## 结果：离群客户的簇归属",
-    cluster_text + "。", "",
-    "## 解释",
-    "‘离群’由局部密度决定，‘簇’由全局质心划分决定，两者不是同一概念；离群者可以集中在一个边缘小簇，也可能分散在多个簇。",
-    "因此应同时看 outlier_count（离群者去了哪里）和簇内比例（该簇有多反常），不能只看簇的大小或把整簇直接判为高风险。", "",
-    "## 局限",
-    "结果依赖特征集合、5 簇设定、20 近邻和 5% 复核比例；这是无监督筛查线索，不是违约结论。完整逐人结果见 bank_lof_clusters.csv。",
+    "## 处理方法",
+    "我沿用了第 9 课的处理顺序：先用中位数填补缺失值，再做 StandardScaler 和 KMeans。题目没有指定簇数，这里设 KMeans(n_clusters=5, random_state=42, n_init=10)。",
+    "聚类和 LOF 使用相同的 7 个数值特征。LOF 的参数为 n_neighbors=20、contamination=0.05，按训练数据约 5% 的比例划线后得到 10 名离群客户。",
+    "customer_id 只用于标识客户，gender 和 city 没有放入本次数值画像。is_default、risk_level 属于监督标签，没有读取，也没有用于选参数或建模。", "",
+    "## 离群客户的簇归属",
+    cluster_text, "",
+    "## 怎么理解这个结果",
+    "LOF 看的是客户与周围近邻的密度差，KMeans 看的是客户离哪个质心更近，所以离群客户不一定单独形成一个簇。这次有 9 人落在簇 0，另 1 人落在簇 3。",
+    "分析时既要数每个簇有多少离群客户，也要看该簇内部的比例，不能只凭簇的大小把整簇客户都判成高风险。", "",
+    "## 使用时的限制",
+    "换一组特征、簇数、近邻数或复核比例，结果都可能变化。这 10 人只是无监督筛查出的待核查对象，不代表他们已经违约。逐人结果见 bank_lof_clusters.csv。",
 ]
 (ROOT / "generated" / "bank_lof_report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
